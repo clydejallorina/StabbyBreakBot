@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from io import BytesIO
 from typing import Optional, NoReturn
 import asyncio
@@ -53,13 +53,17 @@ async def get_stream_thumbnail() -> Optional[ImageFile.ImageFile]:
     global last_thumbnail
     async for stream in twitch.get_streams(first=1, user_login=[TARGET_CHANNEL]):
         # First break check
-        stream_time_elapsed = datetime.now() - stream.started_at
-        if stream_time_elapsed.total_seconds() >= 3600 and stream_time_elapsed.total_seconds() < 3600 + 120:
-            # Immediately send the break message if the stream has already been running for an hour
-            # Make sure that it doesn't get triggered after it's already done so
-            # TODO: Move this logic somewhere else where it makes sense
-            #       Maybe move the stream-get functionality to another async function?
-            asyncio.get_event_loop().create_task(send_chat_message(0))
+        try:
+            stream_time_elapsed = datetime.now(tz=timezone.utc) - stream.started_at
+            if stream_time_elapsed.total_seconds() >= 3600 and stream_time_elapsed.total_seconds() < 3600 + 120:
+                # Immediately send the break message if the stream has already been running for an hour
+                # Make sure that it doesn't get triggered after it's already done so
+                # TODO: Move this logic somewhere else where it makes sense
+                #       Maybe move the stream-get functionality to another async function?
+                logging.info("It's time for the first break!")
+                await send_chat_message(0)
+        except Exception as e:
+            logging.exception(e)
         if stream.thumbnail_url != "":
             thumbnail = await download_stream_thumbnail(stream.thumbnail_url)
             if thumbnail != None:
@@ -93,10 +97,10 @@ async def stream_thumbnail_task() -> NoReturn:
 
 
 async def send_chat_message(delay: int = 3600):
-    logging.info("Started timer task with a delay of %d", delay)
+    logging.debug("Started timer task with a delay of %d", delay)
     if delay > 0:
         await asyncio.sleep(delay)
-    logging.info("Timer ended")
+    logging.debug("Timer ended")
     # commented this out so we don't send a message during debugging lol
     # chat.send_message(TARGET_CHANNEL, "Mayhaps it is time for a break?")
 

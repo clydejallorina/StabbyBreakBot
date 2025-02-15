@@ -1,3 +1,5 @@
+import logging
+
 import pytesseract
 from PIL import ImageFile
 
@@ -7,4 +9,5 @@ def check_if_string_in_image(string: str, image: ImageFile.ImageFile) -> bool:
         # Probably.
         return False
     ocr_output = str(pytesseract.image_to_string(image))
+    logging.debug("OCR Output: %s", ocr_output)
     return string in ocr_output
