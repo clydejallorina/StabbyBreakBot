@@ -28,6 +28,10 @@ chat: Chat
 last_thumbnail: ImageFile.ImageFile
 last_check_status: bool = False
 
+# TODO: Maybe don't depend on stream thumbnails to catch the !brbs
+#       It could be a very short break.
+#       Might be worth looking into streamlink
+
 async def on_ready(ready_event: EventData):
     logging.info("Chat client ready! Attempting to join %s's channel...", TARGET_CHANNEL)
     await ready_event.chat.join_room(TARGET_CHANNEL)
